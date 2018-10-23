@@ -8,7 +8,6 @@ package main
 import (
 	"errors"
 	"flag"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -24,7 +23,7 @@ type driverAfter interface {
 
 func printDrivers(drivers []periph.DriverFailure) {
 	if len(drivers) == 0 {
-		fmt.Print("  <none>\n")
+		os.Stdout.WriteString("  <none>\n")
 		return
 	}
 	max := 0
@@ -34,7 +33,11 @@ func printDrivers(drivers []periph.DriverFailure) {
 		}
 	}
 	for _, f := range drivers {
-		fmt.Printf("- %-*s: %v\n", max, f.D, f.Err)
+		os.Stdout.WriteString("- ")
+		os.Stdout.WriteString(f.D.String()) //"%-*s")
+		os.Stdout.WriteString(": ")
+		os.Stdout.WriteString(f.Err.Error())
+		os.Stdout.WriteString("\n")
 	}
 }
 
@@ -54,9 +57,9 @@ func mainImpl() error {
 		return err
 	}
 
-	fmt.Printf("Drivers loaded and their dependencies, if any:\n")
+	os.Stdout.WriteString("Drivers loaded and their dependencies, if any:\n")
 	if len(state.Loaded) == 0 {
-		fmt.Print("  <none>\n")
+		os.Stdout.WriteString("  <none>\n")
 	} else {
 		max := 0
 		for _, d := range state.Loaded {
@@ -71,30 +74,38 @@ func mainImpl() error {
 				a = da.After()
 			}
 			if len(p) == 0 && len(a) == 0 {
-				fmt.Printf("- %s\n", d)
+				os.Stdout.WriteString("- ")
+				os.Stdout.WriteString(d.String())
+				os.Stdout.WriteString("\n")
 				continue
 			}
-			fmt.Printf("- %-*s:", max, d)
+			os.Stdout.WriteString("- ")
+			os.Stdout.WriteString(d.String()) //"%-*s", max, d)
+			os.Stdout.WriteString(":")
 			if len(p) != 0 {
-				fmt.Printf(" %s", p)
+				os.Stdout.WriteString(" ")
+				// TODO: os.Stdout.WriteString(p)
 			}
 			if len(a) != 0 {
-				fmt.Printf(" optional: %s", a)
+				os.Stdout.WriteString(" optional: ")
+				// TODO: os.Stdout.WriteString(a)
 			}
-			fmt.Printf("\n")
+			os.Stdout.WriteString("\n")
 		}
 	}
 
-	fmt.Printf("Drivers skipped and the reason why:\n")
+	os.Stdout.WriteString("Drivers skipped and the reason why:\n")
 	printDrivers(state.Skipped)
-	fmt.Printf("Drivers failed to load and the error:\n")
+	os.Stdout.WriteString("Drivers failed to load and the error:\n")
 	printDrivers(state.Failed)
 	return err
 }
 
 func main() {
 	if err := mainImpl(); err != nil {
-		fmt.Fprintf(os.Stderr, "periph-info: %s.\n", err)
+		os.Stderr.WriteString("periph-info: ")
+		os.Stderr.WriteString(err.Error())
+		os.Stderr.WriteString(".\n")
 		os.Exit(1)
 	}
 }
